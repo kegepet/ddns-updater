@@ -91,11 +91,13 @@ main () {
   
   if [ -n $4 ]; then sleep_for=$4
   else sleep_for=300 # default to 5 minutes
-
+  fi
+  
   # if user sets failure-limit to 0, there is no failure limit
   # if they leave it out, it will default to 10
   if [ -n $5 ]; then flimit=$5
   else flimit=10
+  fi
 
   checkip_fails=0
   dig_fails=0
