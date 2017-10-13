@@ -10,7 +10,7 @@
 **ddns-updater** relies on a few external commands on Unix-like systems. Among them, `curl`, `dig`, and `ping`. While it's almost a certainty that your system has both `curl` and `ping` installed, it may not have `dig`. `dig` is a popular DNS probing tool and is installed with the **dnsutils** package. **ddns-updater** will automatically check to see if it's installed, but if it isn't, you can get it any number of ways. For Debian Linux-based systems, just run `apt-get install dnsutils`. For other Linux distros, a similar method most likely exists. Check your documentation. On Macs, `dig` is standard.
 
 ## Configuration
-A sample configuration file has been created and can be used as a basis for your own. The structure is simple: Each key and value is separated by at least one space, key/value pairs are separated by line breaks, and each host block (the host and all of its configuration details) is separated by a blank line.
+A sample configuration file has been created and can be used as a basis for your own. The structure is simple: Each key and value is separated by at least one space, key/value pairs are separated by line breaks, and the individual host blocks (the hostname and all configuration options) are separated by a blank line.
 
 Keys&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Description 
 --- |--- 
