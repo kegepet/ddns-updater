@@ -13,7 +13,7 @@ killme() {
 
 # check for network connectivity
 if ! ping -c 1 -W 2 -q www.google.com > /dev/null 2>&1; then
-  echo "ddns-updater: There appears to be no internet connection. Exiting." >&2
+  echo "ddns-updater: There appears to be no Internet connection. Exiting." >&2
   exit 1
 fi
 
@@ -113,7 +113,7 @@ main () {
 
     # check for network connectivity
     if ! ping -c 1 -W 2 -q www.google.com > /dev/null 2>&1; then
-      echo "ddns-updater: There appears to be no internet connection. Will try again in $sleep_for seconds." >&2
+      echo "ddns-updater: There appears to be no Internet connection. Will try again in $sleep_for seconds." >&2
       sleep $sleep_for
       continue
     fi
