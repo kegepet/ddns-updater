@@ -11,6 +11,12 @@ killme() {
 # dig @8.8.8.8 subdomain.yourdomain.com A +short
 # replace any instance of 0.0.0.0 in the url with the current ip
 
+# check for network connectivity
+if ! ping -c 1 -W 2 -q www.google.com > /dev/null 2>&1; then
+  echo "ddns-updater: There appears to be no internet connection. Exiting." >&2
+  exit 1
+fi
+
 # verify curl and dig are installed on system
 if ! command -v curl 1> /dev/null; then
   echo "ddns-updater: 'curl' must be installed on your system." 1>&2
@@ -48,7 +54,7 @@ $i" || config="$i"
 elif [ -s /dev/stdin ] || echo "$*" | grep -Eq '(^| )\-\-config\-file|\-f( |$)'; then
   # if from redirection
   if [ -s /dev/stdin ]; then
-    config=$(cat)
+    read config
   # otherwise it must be from config file
   elif [ -z $config ]; then
     while [ $# -gt 0 ]; do
@@ -57,7 +63,7 @@ elif [ -s /dev/stdin ] || echo "$*" | grep -Eq '(^| )\-\-config\-file|\-f( |$)';
       else shift
       fi
     done
-    config=$(cat < "$1")
+    read config < "$1"
   else
     echo "ddns-updater: Failed to read configuration details. Please check your syntax." 1>&2
     exit 1
@@ -105,20 +111,30 @@ main () {
 
   while true; do
 
+    # check for network connectivity
+    if ! ping -c 1 -W 2 -q www.google.com > /dev/null 2>&1; then
+      echo "ddns-updater: There appears to be no internet connection. Will try again in $sleep_for seconds." >&2
+      sleep $sleep_for
+      continue
+    fi
+
     # get ip
-    curip=$(curl --buffer --max-time 10 -s "https://domains.google.com/checkip")
+    curip=$(curl --buffer --max-time 10 -s "https://domains.google.com/checkip" 2> /dev/null)
     # if ip isn't right, sleep some and try again
     if [ -z "$curip" ] || ! echo "$curip" | grep -Eq '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'; then
       checkip_fails=$(( $checkip_fails + 1 ))
-      [ $checkip_fails -ge 20 ] && killme
+      if [ $checkip_fails -ge 20 ]; then
+        echo "ddns-updater: External IP check resource has been consistently unavailable. 'ddns-updater' is exiting." >&2
+        killme
+      fi
       sleep $sleep_for
       continue
     fi
 
     # now dig
     # first get the SOA nameserver
-    ns=$(dig @8.8.8.8 +short NS $(echo $hostname | grep -Eo '([A-z\-]+\.[A-z]+)$') | head -1 | sed -E 's/\.$//g')
-    recip=$(dig @$ns +short A $hostname)
+    ns=$(dig @8.8.8.8 +short NS $(echo $hostname | grep -Eo '([A-z\-]+\.[A-z]+)$') 2> /dev/null | head -1 | sed -E 's/\.$//g')
+    recip=$(dig @$ns +short A $hostname 2> /dev/null)
     # if ip isn't right, sleep some and try again
     if [ -z "$recip" ] || ! echo "$recip" | grep -Eq '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'; then
       # not sure why dig would fail, but...    
@@ -138,9 +154,9 @@ main () {
       # replace 0.0.0.0 with curip, if needed
       uurl=$(echo "$uurl" | sed -E "s/(^|[^0-9])0\.0\.0\.0([^0-9]|$)/\1$curip\2/g")
       # run update
-      curl --buffer --max-time 10 -is $uurl > /tmp/ddns-update-response
+      curl --buffer --max-time 10 -is $uurl > /tmp/ddns-update-response 2> /dev/null
       # first check for 200
-      if head -1 < /tmp/ddns-update-response | grep -Eqw '200'; then
+      if [ -s /tmp/ddns-update-response ] && head -1 < /tmp/ddns-update-response | grep -Eqw '200'; then
         # let's wait 5 mins before running again
         echo "ddns-updater: successful update of \"$host\""
         sleep 300
