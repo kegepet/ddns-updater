@@ -1,5 +1,11 @@
 #!/bin/sh
 
+# kill all subprocesses before killing self
+killme() {
+    for i in $(ps -o pid,ppid | grep $$ | sed -E 's/[0-9]+$//g'); do
+        [ $i -ne $$ ] && kill $i
+    done
+}
 # address for current ip: https://domains.google.com/checkip
 # address for online dig: https://dns-api.org/A/subdomain.yourdomain.com
 # dig @8.8.8.8 subdomain.yourdomain.com A +short
@@ -20,9 +26,9 @@ fi
 # space separating key and value; line break separating key/value pairs
 
 # if details are provided by argv
-if [ $# -ge 2 ] && echo "$*" | grep -Eq '(^| )(\-u|\-\-update-url)( |$)'; then
+if [ $# -ge 2 ] && echo "$*" | grep -Eq '(^| )(\-h|\-\-hostname)( |$)' && echo "$*" | grep -Eq '(^| )(\-u|\-\-update-url)( |$)'; then
   for i in "$@"; do
-    if echo "$i" | grep -Eq '^(\-[upsl]|\-\-update\-url|\-\-success\-pattern|\-\-secs\-between|\-\-failure\-limit)$'; then
+    if echo "$i" | grep -Eq '^(\-[hupsl]|\-\-hostname|\-\-update\-url|\-\-success\-pattern|\-\-secs\-between|\-\-failure\-limit)$'; then
       # DO NOT FIX NEXT LINE. It must remain broken to insert a literal line break.
       [ -n "$config" ] && config="$config
 $i" || config="$i"
@@ -32,6 +38,7 @@ $i" || config="$i"
   done
   # replace short option names with full ones; strip leading hyphens
   config=$(echo "$config" |
+  sed -E 's/(^| )(\-h|\-\-hostname)( |$)/\1hostname\3/g' |
   sed -E 's/(^| )(\-u|\-\-update-url)( |$)/\1update-url\3/g' |
   sed -E 's/(^| )(\-p|\-\-success-pattern)( |$)/\1success-pattern\3/g' |
   sed -E 's/(^| )(\-s|\-\-secs-between)( |$)/\1secs-between\3/g' |
@@ -67,7 +74,7 @@ else
 fi
 
 
-cur_ip=
+
 main () {
   # curl options
   # --buffer (buffers content before writing to stdout)
@@ -78,10 +85,71 @@ main () {
   # -s, --silent
   # -w, --write-out <format> e.g. -w "%{remote_ip}"
     # the above could be used in leiu of dig?
-  echo "$1"
-  echo "$2"
-  echo "$3"
-  echo "$4"
+  hostname="$1"
+  uurl="$2"
+  spatt="$3"
+  
+  if [ -n $4 ]; then sleep_for=$4
+  else sleep_for=300 # default to 5 minutes
+
+  # if user sets failure-limit to 0, there is no failure limit
+  # if they leave it out, it will default to 10
+  if [ -n $5 ]; then flimit=$5
+  else flimit=10
+
+  checkip_fails=0
+  dig_fails=0
+  update_fails=0
+
+  while true; do
+
+    # get ip
+    curip=$(curl --buffer --max-time 10 -s "https://domains.google.com/checkip")
+    # if ip isn't right, sleep some and try again
+    if [ -z "$curip" ] || ! echo "$curip" | grep -Eq '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'; then
+      checkip_fails=$(( $checkip_fails + 1 ))
+      [ $checkip_fails -ge 20 ] && killme
+      sleep $sleep_for
+      continue
+    fi
+
+    # now dig
+    # first get the SOA nameserver
+    ns=$(dig @8.8.8.8 +short NS $(echo $hostname | grep -Eo '([A-z\-]+\.[A-z]+)$') | head -1 | sed -E 's/\.$//g')
+    recip=$(dig @$ns +short A $hostname)
+    # if ip isn't right, sleep some and try again
+    if [ -z "$recip" ] || ! echo "$recip" | grep -Eq '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'; then
+      # not sure why dig would fail, but...    
+      dig_fails=$(( $dig_fails + 1 ))
+      [ $dig_fails -ge 100 ] && killme
+      sleep $sleep_for
+      continue
+    fi
+
+    # if they are the same, nothing to do
+    if [ "$curip" = "$recip" ]; then
+      sleep $sleep_for
+      continue
+
+    # if not, attempt update
+    else
+      # replace 0.0.0.0 with curip, if needed
+      uurl=$(echo "$uurl" | sed -E "s/(^|[^0-9])0\.0\.0\.0([^0-9]|$)/\1$curip\2/g")
+      # run update
+      curl --buffer --max-time 10 -is $uurl > /tmp/ddns-update-response
+      # first check for 200
+      if head -1 < /tmp/ddns-update-response | grep -Eqw '200'; then
+        # let's wait 5 mins before running again
+        echo "ddns-updater: successful update of \"$host\""
+        sleep 300
+      # if not a 200
+      else
+        update_fails=$(( $update_fails + 1 ))
+        [ $update_fails -ge $flimit ] && return 1
+        sleep $sleep_for
+      fi
+    fi
+  done
 
   return 0
 }
@@ -89,20 +157,25 @@ main () {
 # parse config details
 # as soon as one host is parsed, immediately call the main function with its details
 # even if the loop is incomplete, because we need to reuse the variables
+OIFS=$IFS
 IFS="
 "
 for i in $config; do
-  if echo "$i" | grep -Eq '^update-url'; then
-    [ -n "$uurl" ] && main "$uurl" "$spatt" "$sbtwn" "$flimit" &
-    uurl=$(echo "$i" | sed -E 's/^[^ ]+ +//g')
-    spatt=; sbtwn=; flimit=
+  if echo "$i" | grep -Eq '^hostname'; then
+    [ -n "$hostname" ] && [ -n "$uurl" ] && main "$hostname" "$uurl" "$spatt" "$sbtwn" "$flimit" &
+    hostname=$(echo "$i" | sed -E 's/^[^ ]+ +//g')
+    uurl=; spatt=; sbtwn=; flimit=
+  elif echo "$i" | grep -Eq '^update-url'; then uurl=$(echo "$i" | sed -E 's/^[^ ]+ +//g')
   elif echo "$i" | grep -Eq '^success-pattern'; then spatt=$(echo "$i" | sed -E 's/^[^ ]+ +//g')
   elif echo "$i" | grep -Eq '^secs-between'; then sbtwn=$(echo "$i" | sed -E 's/^[^ ]+ +//g')
   elif echo "$i" | grep -Eq '^failure-limit'; then flimit=$(echo "$i" | sed -E 's/^[^ ]+ +//g')
   fi
 done
 # and one last time for the one the loop didn't get
-[ -n "$uurl" ] && main "$uurl" "$spatt" "$sbtwn" "$flimit" &
+[ -n "$hostname" ] && [ -n "$uurl" ] && main "$hostname" "$uurl" "$spatt" "$sbtwn" "$flimit" &
+IFS=$OIFS
 
-# exiting with an error since script should never get here
-exit 1
+
+trap 'killme' INT
+wait
+exit 0
