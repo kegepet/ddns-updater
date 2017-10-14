@@ -164,7 +164,7 @@ main () {
     elif $post_update_state; then
       update_fails=$(( $update_fails + 1 ))
       if [ $update_fails -ge $flimit ]; then
-        printf "ddns-updater DEACTIVATED $hostname after $flimit failed attempts.\n" >&2
+        printf "ddns-updater DEACTIVATED for $hostname after $flimit failed attempts.\n" >&2
         return 1
       fi
       printf "ddns-updater: Failed for $update_fails time(s) to update $hostname.\n" >&2
@@ -184,7 +184,7 @@ main () {
     else
       update_fails=$(( $update_fails + 1 ))
       if [ $update_fails -ge $flimit ]; then
-        printf "ddns-updater DEACTIVATED $hostname after $flimit failed attempts.\n" >&2
+        printf "ddns-updater DEACTIVATED for $hostname after $flimit failed attempts.\n" >&2
         return 1
       fi
       sleep $sleep_for
