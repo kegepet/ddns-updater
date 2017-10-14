@@ -12,7 +12,7 @@
 ## Configuration
 A sample configuration file has been created and can be used as a basis for your own. The structure is simple: Each key and value is separated by at least one space, key/value pairs are separated by line breaks, and the individual host blocks (the hostname and all configuration options) are separated by a blank line.
 
-Keys&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Description 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Keys&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Description 
 --- |--- 
 hostname | The fully qualified domain name (FQDN) you wish to update: e.g. `subdomain.yourdomain.com`
 update-url | The actual url needed to perform the update. You can get this from your Dynamic DNS provider. The sample configuration file includes examples from Google Domains and Namecheap as well as links to documentation on those respective sites. If your url requires your current ip, just use `0.0.0.0` instead and the script will automatically replace it with your current ip.
