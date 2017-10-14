@@ -3,28 +3,27 @@
 # kill all subprocesses before killing self
 killme() {
     for i in $(ps -o pid,ppid | grep $$ | sed -E 's/[0-9]+$//g'); do
-        [ $i -ne $$ ] && kill $i 2> /dev/null
+        [ $i -ne $$ ] && kill $i > /dev/null 2>&1
     done
-    echo "ddns-updater exiting..."
+    printf "ddns-updater exiting...\n"
 }
 
-TAB="$(printf '\t')"
-NEWLINE="
-"
+printf -v TAB '\t'
+printf -v NEWLINE '\n'
 
 # check for Internet
 if ! ping -c 1 -W 2 -q www.google.com > /dev/null 2>&1; then
-  echo "ddns-updater: There appears to be no Internet connection. Exiting." >&2
+  printf "ddns-updater: There appears to be no Internet connection. Exiting...\n" >&2
   exit 1
 fi
 
 # verify curl and dig are installed on system
 if ! command -v curl 1> /dev/null; then
-  echo "ddns-updater: 'curl' must be installed on your system." 1>&2
+  printf "ddns-updater: 'curl' must be installed on your system. Exiting...\n" 1>&2
   exit 1
 fi
 if ! command -v dig 1> /dev/null; then
-  echo "ddns-updater: 'dig', part of the 'dnsutils' package, must be installed on your system." 1>&2
+  printf "ddns-updater: 'dig', part of the 'dnsutils' package, must be installed on your system. Exiting...\n" 1>&2
   exit 1
 fi
 
@@ -64,7 +63,7 @@ elif [ -s /dev/stdin ] || echo "$*" | grep -Eq '(^| )\-\-config\-file|\-f( |$)';
     done
     config=$(cat < "$1")
   else
-    echo "ddns-updater: Failed to read configuration details. Please check your syntax." 1>&2
+    printf "ddns-updater: Failed to read configuration details. Please check your syntax. Exiting.\n" 1>&2
     exit 1
   fi
   # strip comments, blank lines, and quotes
@@ -74,7 +73,7 @@ elif [ -s /dev/stdin ] || echo "$*" | grep -Eq '(^| )\-\-config\-file|\-f( |$)';
   # so close single quote, put literal single quote, reopen single quote
   config=$(echo "$config" | grep -Eo '^[^#$]+' | sed -E 's/^["'\'']?([A-z\-]+)["'\'']? +["'\'']?(.*)/\1 \2/g' | sed -E 's/["'\'']?$//g')
 else
-  echo "ddns-updater: No configuration details provided." 1>&2
+  printf "ddns-updater: No configuration details provided. Exiting.\n" 1>&2
   exit 1
 fi
 
@@ -110,13 +109,13 @@ main () {
 
   post_update_state=false
 
-  echo "ddns-updater: Running for '$hostname'..."
+  printf "ddns-updater ACTIVATED for $hostname...\n"
 
   while true; do
 
     # check for Internet
     if ! ping -c 1 -W 2 -q www.google.com > /dev/null 2>&1; then
-      echo "ddns-updater: There appears to be no Internet connection. Will try again in $sleep_for seconds." >&2
+      printf "ddns-updater: There appears to be no Internet connection. Will try again in $sleep_for seconds.\n" >&2
       sleep $sleep_for
       continue
     fi
@@ -130,7 +129,7 @@ main () {
     if [ -z "$curip" ] || ! echo "$curip" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
       checkip_fails=$(( $checkip_fails + 1 ))
       if [ $checkip_fails -ge 20 ]; then
-        echo "ddns-updater: External IP check resource has been consistently unavailable. 'ddns-updater' is exiting." >&2
+        printf "ddns-updater: External IP check resource has been consistently unavailable.\n" >&2
         killme
       fi
       sleep $sleep_for
@@ -149,7 +148,7 @@ main () {
       # not sure why dig would fail, but...
       dig_fails=$(( $dig_fails + 1 ))
       if [ $dig_fails -ge 100 ]; then
-        echo "ddns-updater: Script consistently unable to fetch current record from authoritative nameserver. Will no longer make attempts for '$hostname'." >&2
+        printf "ddns-updater DEACTIVATED for $hostname after consistently failing to retrieve current DNS record from authoritative nameserver.\n" >&2
         return 1
       fi
       sleep $sleep_for
@@ -158,13 +157,17 @@ main () {
 
     # if they are the same, nothing to do
     if [ "$curip" = "$recip" ]; then
-      $post_update_state && echo "ddns-updater: Successful update of '$hostname'!"
+      $post_update_state && printf "ddns-updater: Successful update of $hostname!\n"
       post_update_state=false
       sleep $sleep_for
       continue
     elif $post_update_state; then
       update_fails=$(( $update_fails + 1 ))
-      echo "ddns-updater: Failed for $update_fails time(s) to update '$hostname'." >&2
+      if [ $update_fails -ge $flimit ]; then
+        printf "ddns-updater DEACTIVATED $hostname after $flimit failed attempts.\n" >&2
+        return 1
+      fi
+      printf "ddns-updater: Failed for $update_fails time(s) to update $hostname.\n" >&2
     fi
     
     # if not, attempt update
@@ -174,14 +177,14 @@ main () {
     curl --buffer --max-time 10 -is $uurl > /tmp/ddns-update-response-for-$hostname 2> /dev/null
     # first check for 200
     if [ -s /tmp/ddns-update-response-for-$hostname ] && head -1 < /tmp/ddns-update-response-for-$hostname | grep -Eqw '200'; then
-      echo "ddns-updater: Request to update '$hostname' made. Will wait $sleep_for seconds to check for success."
+      printf "ddns-updater: Request to update $hostname made. Will wait $sleep_for seconds to check for success.\n"
       post_update_state=true
       sleep $sleep_for
     # if not a 200
     else
       update_fails=$(( $update_fails + 1 ))
       if [ $update_fails -ge $flimit ]; then
-        echo "ddns-updater: No longer updating '$hostname' after $flimit failed attempts." >&2
+        printf "ddns-updater DEACTIVATED $hostname after $flimit failed attempts.\n" >&2
         return 1
       fi
       sleep $sleep_for
