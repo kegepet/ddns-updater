@@ -12,7 +12,7 @@ TAB="$(printf '\t')"
 NEWLINE="
 "
 
-# check for network connectivity
+# check for Internet
 if ! ping -c 1 -W 2 -q www.google.com > /dev/null 2>&1; then
   echo "ddns-updater: There appears to be no Internet connection. Exiting." >&2
   exit 1
@@ -114,7 +114,7 @@ main () {
 
   while true; do
 
-    # check for network connectivity
+    # check for Internet
     if ! ping -c 1 -W 2 -q www.google.com > /dev/null 2>&1; then
       echo "ddns-updater: There appears to be no Internet connection. Will try again in $sleep_for seconds." >&2
       sleep $sleep_for
@@ -122,7 +122,10 @@ main () {
     fi
 
     # get ip
-    curip=$(curl --buffer --max-time 10 -s "https://domains.google.com/checkip" 2> /dev/null)
+    curip=$(dig @208.67.222.222 @208.67.220.220 @208.67.222.220 @208.67.220.222 +short myip.opendns.com 2> /dev/null ||
+      curl --buffer --max-time 2 https://domains.google.com/checkip 2> /dev/null ||
+      curl --buffer --max-time 2 https://diagnostic.opendns.com/myip 2> /dev/null ||
+      curl --buffer --max-time 2 http://whatismyip.akamai.com 2> /dev/null)
     # if ip isn't right, sleep some and try again
     if [ -z "$curip" ] || ! echo "$curip" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
       checkip_fails=$(( $checkip_fails + 1 ))
@@ -137,7 +140,7 @@ main () {
     # now dig
     # first get the SOA nameserver
     tld=$(echo $hostname | grep -Eo '([A-z\-]+\.[A-z]+)$')
-    ns=$(dig @8.8.8.8 SOA $hostname 2> /dev/null |
+    ns=$(dig @8.8.8.8 @8.8.4.4 SOA $hostname 2> /dev/null |
       grep -Ei "$tld\.$TAB+[0-9]+$TAB+[^$TAB]+$TAB+SOA$TAB+([^ ]+).+" |
       sed -E "s/([^$TAB]+$TAB+)+([^ ]+).*/\2/g")
     recip=$(dig @$ns +short A $hostname 2> /dev/null)
