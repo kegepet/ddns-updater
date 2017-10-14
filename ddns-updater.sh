@@ -3,13 +3,14 @@
 # kill all subprocesses before killing self
 killme() {
     for i in $(ps -o pid,ppid | grep $$ | sed -E 's/[0-9]+$//g'); do
-        [ $i -ne $$ ] && kill $i
+        [ $i -ne $$ ] && kill $i 2> /dev/null
     done
+    echo "ddns-updater exiting..."
 }
-# address for current ip: https://domains.google.com/checkip
-# address for online dig: https://dns-api.org/A/subdomain.yourdomain.com
-# dig @8.8.8.8 subdomain.yourdomain.com A +short
-# replace any instance of 0.0.0.0 in the url with the current ip
+
+TAB="$(printf '\t')"
+NEWLINE="
+"
 
 # check for network connectivity
 if ! ping -c 1 -W 2 -q www.google.com > /dev/null 2>&1; then
@@ -35,9 +36,7 @@ fi
 if [ $# -ge 2 ] && echo "$*" | grep -Eq '(^| )(\-h|\-\-hostname)( |$)' && echo "$*" | grep -Eq '(^| )(\-u|\-\-update-url)( |$)'; then
   for i in "$@"; do
     if echo "$i" | grep -Eq '^(\-[hupsl]|\-\-hostname|\-\-update\-url|\-\-success\-pattern|\-\-secs\-between|\-\-failure\-limit)$'; then
-      # DO NOT FIX NEXT LINE. It must remain broken to insert a literal line break.
-      [ -n "$config" ] && config="$config
-$i" || config="$i"
+      [ -n "$config" ] && config="$config$NEWLINE$i" || config="$i"
     else
       config="$config $i"
     fi
@@ -54,7 +53,7 @@ $i" || config="$i"
 elif [ -s /dev/stdin ] || echo "$*" | grep -Eq '(^| )\-\-config\-file|\-f( |$)'; then
   # if from redirection
   if [ -s /dev/stdin ]; then
-    read config
+    config=$(cat)
   # otherwise it must be from config file
   elif [ -z $config ]; then
     while [ $# -gt 0 ]; do
@@ -63,7 +62,7 @@ elif [ -s /dev/stdin ] || echo "$*" | grep -Eq '(^| )\-\-config\-file|\-f( |$)';
       else shift
       fi
     done
-    read config < "$1"
+    config=$(cat < "$1")
   else
     echo "ddns-updater: Failed to read configuration details. Please check your syntax." 1>&2
     exit 1
@@ -91,7 +90,7 @@ main () {
   # -s, --silent
   # -w, --write-out <format> e.g. -w "%{remote_ip}"
     # the above could be used in leiu of dig?
-  hostname="$1"
+  hostname=$(echo "$1" | sed -E 's/\.&//g') # strip trailing dot if there is one
   uurl="$2"
   spatt="$3"
   
@@ -109,6 +108,10 @@ main () {
   dig_fails=0
   update_fails=0
 
+  post_update_state=false
+
+  echo "ddns-updater: Running for '$hostname'..."
+
   while true; do
 
     # check for network connectivity
@@ -121,7 +124,7 @@ main () {
     # get ip
     curip=$(curl --buffer --max-time 10 -s "https://domains.google.com/checkip" 2> /dev/null)
     # if ip isn't right, sleep some and try again
-    if [ -z "$curip" ] || ! echo "$curip" | grep -Eq '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'; then
+    if [ -z "$curip" ] || ! echo "$curip" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
       checkip_fails=$(( $checkip_fails + 1 ))
       if [ $checkip_fails -ge 20 ]; then
         echo "ddns-updater: External IP check resource has been consistently unavailable. 'ddns-updater' is exiting." >&2
@@ -133,39 +136,52 @@ main () {
 
     # now dig
     # first get the SOA nameserver
-    ns=$(dig @8.8.8.8 +short NS $(echo $hostname | grep -Eo '([A-z\-]+\.[A-z]+)$') 2> /dev/null | head -1 | sed -E 's/\.$//g')
+    tld=$(echo $hostname | grep -Eo '([A-z\-]+\.[A-z]+)$')
+    ns=$(dig @8.8.8.8 SOA $hostname 2> /dev/null |
+      grep -Ei "$tld\.$TAB+[0-9]+$TAB+[^$TAB]+$TAB+SOA$TAB+([^ ]+).+" |
+      sed -E "s/([^$TAB]+$TAB+)+([^ ]+).*/\2/g")
     recip=$(dig @$ns +short A $hostname 2> /dev/null)
     # if ip isn't right, sleep some and try again
-    if [ -z "$recip" ] || ! echo "$recip" | grep -Eq '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'; then
-      # not sure why dig would fail, but...    
+    if [ -z "$recip" ] || ! echo "$recip" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
+      # not sure why dig would fail, but...
       dig_fails=$(( $dig_fails + 1 ))
-      [ $dig_fails -ge 100 ] && killme
+      if [ $dig_fails -ge 100 ]; then
+        echo "ddns-updater: Script consistently unable to fetch current record from authoritative nameserver. Will no longer make attempts for '$hostname'." >&2
+        return 1
+      fi
       sleep $sleep_for
       continue
     fi
 
     # if they are the same, nothing to do
     if [ "$curip" = "$recip" ]; then
+      $post_update_state && echo "ddns-updater: Successful update of '$hostname'!"
+      post_update_state=false
       sleep $sleep_for
       continue
-
+    elif $post_update_state; then
+      update_fails=$(( $update_fails + 1 ))
+      echo "ddns-updater: Failed for $update_fails time(s) to update '$hostname'." >&2
+    fi
+    
     # if not, attempt update
+    # replace 0.0.0.0 with curip, if needed
+    uurl=$(echo "$uurl" | sed -E "s/(^|[^0-9])0\.0\.0\.0([^0-9]|$)/\1$curip\2/g")
+    # run update
+    curl --buffer --max-time 10 -is $uurl > /tmp/ddns-update-response-for-$hostname 2> /dev/null
+    # first check for 200
+    if [ -s /tmp/ddns-update-response-for-$hostname ] && head -1 < /tmp/ddns-update-response-for-$hostname | grep -Eqw '200'; then
+      echo "ddns-updater: Request to update '$hostname' made. Will wait $sleep_for seconds to check for success."
+      post_update_state=true
+      sleep $sleep_for
+    # if not a 200
     else
-      # replace 0.0.0.0 with curip, if needed
-      uurl=$(echo "$uurl" | sed -E "s/(^|[^0-9])0\.0\.0\.0([^0-9]|$)/\1$curip\2/g")
-      # run update
-      curl --buffer --max-time 10 -is $uurl > /tmp/ddns-update-response 2> /dev/null
-      # first check for 200
-      if [ -s /tmp/ddns-update-response ] && head -1 < /tmp/ddns-update-response | grep -Eqw '200'; then
-        # let's wait 5 mins before running again
-        echo "ddns-updater: successful update of \"$host\""
-        sleep 300
-      # if not a 200
-      else
-        update_fails=$(( $update_fails + 1 ))
-        [ $update_fails -ge $flimit ] && return 1
-        sleep $sleep_for
+      update_fails=$(( $update_fails + 1 ))
+      if [ $update_fails -ge $flimit ]; then
+        echo "ddns-updater: No longer updating '$hostname' after $flimit failed attempts." >&2
+        return 1
       fi
+      sleep $sleep_for
     fi
   done
 
@@ -176,8 +192,7 @@ main () {
 # as soon as one host is parsed, immediately call the main function with its details
 # even if the loop is incomplete, because we need to reuse the variables
 OIFS=$IFS
-IFS="
-"
+IFS="$NEWLINE"
 for i in $config; do
   if echo "$i" | grep -Eq '^hostname'; then
     [ -n "$hostname" ] && [ -n "$uurl" ] && main "$hostname" "$uurl" "$spatt" "$sbtwn" "$flimit" &
