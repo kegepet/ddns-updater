@@ -12,7 +12,7 @@
 ## Configuration
 A sample configuration file has been created and can be used as a basis for your own. The structure is simple: Each key and value is separated by at least one space, key/value pairs are separated by line breaks, as are individual host blocks (the `hostname` and all other configuration fields). The only way the script knows one host and its associated details from another is by the `hostname` field, which is why it must always appear **first** in a host block. The order of the other fields, i.e. `update-url`, `secs-between`, and `failure-limit` are not important. Once again, the `hostname` field must always be first in the block. You may also skip lines for your own clarity, as well as use comments, which are just lines of text with a `#` at the beginning.
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Fields&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Description 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Field&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Description 
 --- |--- 
 hostname | The fully qualified domain name (FQDN) you wish to update: e.g. `subdomain.yourdomain.com`
 update-url | The actual URL needed to perform the update. You can get this from your Dynamic DNS provider. The sample configuration file includes examples from Google Domains and Namecheap as well as links to documentation on those respective sites. If your URL requires your current IP address, just use `0.0.0.0` instead and the script will automatically replace it with your current IP.
@@ -22,3 +22,16 @@ failure-limit | Specifies how often an update request can fail before the script
 
 
 ## Installation
+You can just run **ddns-updater** from the commandline by typing `/path/to/ddns-updater -f /path/to/config-file`. This, however, causes **ddns-updater** to run the foreground, occupying your terminal window. Instead, you can send it to the background by adding a `&` to the end of the command, i.e. `/path/to/ddns-updater -f /path/to/config-file &`.
+
+Ideally, however, you want **ddns-updater** to run automatically whenever your system starts up. There are a number of ways to do this depending on your specific OS. On Debian Linux-based systems, including Ubuntu, the easiest way to do it is just to add the above command directly to your `/etc/rc.local` file. Better yet, run the command as a specific user (perhaps for security reasons or whatever), such as:
+```
+su someuser -c "/path/to/ddns-updater -f /path/to/config-file &"
+```
+It may also be advisable to use the `nohup` command along with the `&` to prevent possible hangups caused by `someuser` logging in and out of the system. So:
+```
+su someuser -c "nohup /path/to/ddns-updater -f /path/to/config-file &"
+```
+On a Mac, you can just create a plain text file, calling it, say, `start-ddns-updater` and writing `/path/to/ddns-updater -f 'path/to/config-file &'` to this file. Then, go to your Terminal, and make `start-ddns-updater` executable by issuing this command: `chmod +x /path/to/start-ddns-updater`. Finally, go to `System Preferences > Users & Groups > Login Items` and add `start-ddns-updater` to your list of login items. Done.
+
+On other OSes, similar methods exist. Check your documentation.
