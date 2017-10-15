@@ -109,7 +109,7 @@ main () {
 
   post_update_state=false
 
-  printf "ddns-updater ACTIVATED for $hostname...\n"
+  printf "ddns-updater ACTIVATED for '$hostname'...\n"
 
   while true; do
 
@@ -148,7 +148,7 @@ main () {
       # not sure why dig would fail, but...
       dig_fails=$(( $dig_fails + 1 ))
       if [ $dig_fails -ge 100 ]; then
-        printf "ddns-updater DEACTIVATED for $hostname after consistently failing to retrieve current DNS record from authoritative nameserver.\n" >&2
+        printf "ddns-updater DEACTIVATED for '$hostname' after consistently failing to retrieve current DNS record from authoritative nameserver.\n" >&2
         return 1
       fi
       sleep $sleep_for
@@ -157,17 +157,17 @@ main () {
 
     # if they are the same, nothing to do
     if [ "$curip" = "$recip" ]; then
-      $post_update_state && printf "ddns-updater: Successful update of $hostname!\n"
+      $post_update_state && printf "ddns-updater: Successful update of '$hostname'!\n"
       post_update_state=false
       sleep $sleep_for
       continue
     elif $post_update_state; then
       update_fails=$(( $update_fails + 1 ))
       if [ $update_fails -ge $flimit ]; then
-        printf "ddns-updater DEACTIVATED for $hostname after $flimit failed attempts.\n" >&2
+        printf "ddns-updater DEACTIVATED for '$hostname' after $flimit failed attempts.\n" >&2
         return 1
       fi
-      printf "ddns-updater: Failed for $update_fails time(s) to update $hostname.\n" >&2
+      printf "ddns-updater: Failed for $update_fails time(s) to update '$hostname'.\n" >&2
     fi
     
     # if not, attempt update
@@ -177,14 +177,14 @@ main () {
     curl --buffer --max-time 10 -is $uurl > /tmp/ddns-update-response-for-$hostname 2> /dev/null
     # first check for 200
     if [ -s /tmp/ddns-update-response-for-$hostname ] && head -1 < /tmp/ddns-update-response-for-$hostname | grep -Eqw '200'; then
-      printf "ddns-updater: Request to update $hostname made. Will wait $sleep_for seconds to check for success.\n"
+      printf "ddns-updater: Request to update '$hostname' made. Will wait $sleep_for seconds to check for success.\n"
       post_update_state=true
       sleep $sleep_for
     # if not a 200
     else
       update_fails=$(( $update_fails + 1 ))
       if [ $update_fails -ge $flimit ]; then
-        printf "ddns-updater DEACTIVATED for $hostname after $flimit failed attempts.\n" >&2
+        printf "ddns-updater DEACTIVATED for '$hostname' after $flimit failed attempts.\n" >&2
         return 1
       fi
       sleep $sleep_for
