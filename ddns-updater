@@ -138,9 +138,9 @@ main () {
 
     # now dig
     # first get the SOA nameserver
-    tld=$(echo $hostname | grep -Eo '([A-z\-]+\.[A-z]+)$')
+    root=$(echo $hostname | grep -Eo '([A-z\-]+\.[A-z]+)$')
     ns=$(dig @8.8.8.8 @8.8.4.4 SOA $hostname 2> /dev/null |
-      grep -Ei "$tld\.$TAB+[0-9]+$TAB+[^$TAB]+$TAB+SOA$TAB+([^ ]+).+" |
+      grep -Ei "$root\.$TAB+[0-9]+$TAB+[^$TAB]+$TAB+SOA$TAB+([^ ]+).+" |
       sed -E "s/([^$TAB]+$TAB+)+([^ ]+).*/\2/g")
     recip=$(dig @$ns +short A $hostname 2> /dev/null)
     # if ip isn't right, sleep some and try again
