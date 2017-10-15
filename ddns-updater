@@ -139,9 +139,7 @@ main () {
     # now dig
     # first get the SOA nameserver
     rootdn=$(echo $hostname | grep -Eo '([A-z\-]+\.[A-z]+)$')
-    ns=$(dig @8.8.8.8 @8.8.4.4 SOA $hostname 2> /dev/null |
-      grep -Ei "$rootdn\.$TAB+[0-9]+$TAB+[^$TAB]+$TAB+SOA$TAB+([^ ]+).+" |
-      sed -E "s/([^$TAB]+$TAB+)+([^ ]+).*/\2/g")
+    ns=$(dig @8.8.8.8 @8.8.4.4 +noall +authority +answer SOA $hostname 2> /dev/null | sed -E "s/([^$TAB]+$TAB+)+([^ ]+).*/\2/g")
     recip=$(dig @$ns +short A $hostname 2> /dev/null)
     # if ip isn't right, sleep some and try again
     if [ -z "$recip" ] || ! echo "$recip" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
