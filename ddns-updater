@@ -214,6 +214,6 @@ done
 IFS=$OIFS
 
 
-trap 'killme' HUP INT TERM
+trap 'killme' 1 2 3 15
 wait
 exit 0
