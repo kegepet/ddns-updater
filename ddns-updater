@@ -8,8 +8,9 @@ killme() {
     printf "ddns-updater exiting...\n"
 }
 
-printf -v TAB '\t'
-printf -v NEWLINE '\n'
+TAB=$(printf '\t')
+NEWLINE="
+"
 
 # check for Internet
 if ! ping -c 1 -W 2 -q www.google.com > /dev/null 2>&1; then
