@@ -214,6 +214,6 @@ done
 IFS=$OIFS
 
 
-trap 'killme' SIGHUP SIGINT SIGTERM
+trap 'killme' HUP INT TERM
 wait
 exit 0
