@@ -22,7 +22,7 @@ or with short options:
 ```
 You can also mix short and long options. It doesn't matter.
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Field&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Description 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Field&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Description 
 --- |--- 
 **h**ostname<br>(required) | The fully qualified domain name (FQDN) you wish to update: e.g. `subdomain.yourdomain.com`
 update-**u**rl<br>(required) | The actual URL needed to perform the update. You can get this from your Dynamic DNS provider. The sample configuration file includes examples from Google Domains and Namecheap as well as links to documentation on those respective sites. If your URL requires your current IP address, just use `0.0.0.0` instead and the script will automatically replace it with your current IP.
