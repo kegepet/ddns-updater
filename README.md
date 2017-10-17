@@ -12,7 +12,7 @@
 ## Configuration
 A sample configuration file has been created and can be used as a basis for your own. The structure is simple: Each key and value is separated by at least one space, key/value pairs are separated by line breaks, as are individual host blocks (the `hostname` and all other configuration fields). The only way the script knows one host and its associated details from another is by the `hostname` field, which is why it must always appear **first** in a host block. The order of the other fields, i.e. `update-url`, `secs-between`, and `failure-limit` are not important. Once again, the `hostname` field must always be first in the block. You may also skip lines for your own clarity, as well as use comments, which are just lines of text with a `#` at the beginning.
 
-You may also choose to configure **ddns-updater** directly from the command line using either the short, e.g. `-u`, or long form, e.g. `--update-url` of the available configuration fields listed below. As with the configuration file, the `hostname` field must always be at the front of a host block. For example:
+You may also choose to configure **ddns-updater** directly from the command line using either the short options, e.g. `-u`, or long ones, e.g. `--update-url` of the available configuration fields listed below. As with the configuration file, the `hostname` field must always be at the front of a host block. For example:
 ```
 /path/to/ddns-updater --hostname "abc.mydomain.com" --update-url "https://ddnshost.com?update=abc.mydomain.com" --secs-between "120" --failure-limit "10" --hostname "xyz.anotherdomain.com" --update-url "https://hostddns.com?hostname=abc.anotherdomain.com"
 ```
