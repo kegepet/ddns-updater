@@ -170,9 +170,9 @@ main () {
     
     # if not, attempt update
     # replace 0.0.0.0 with curip, if needed
-    uurl=$(echo "$uurl" | sed -E "s/(^|[^0-9])0\.0\.0\.0([^0-9]|$)/\1$curip\2/g")
+    xurl=$(echo "$uurl" | sed -E "s/(^|[^0-9])0\.0\.0\.0([^0-9]|$)/\1$curip\2/g")
     # run update
-    curl --buffer --max-time 10 -is $uurl > /tmp/ddns-update-response-for-$hostname 2> /dev/null
+    curl --buffer --max-time 10 -is $xurl > /tmp/ddns-update-response-for-$hostname 2> /dev/null
     # first check for 200
     if [ -s /tmp/ddns-update-response-for-$hostname ] && head -1 < /tmp/ddns-update-response-for-$hostname | grep -Eqw '200'; then
       printf "ddns-updater: Request to update '$hostname' made. Will wait $sleep_for seconds to check for success.\n"
