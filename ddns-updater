@@ -69,10 +69,10 @@ elif [ -s /dev/stdin ] || echo "$*" | grep -Eq '(^| )\-\-config\-file|\-f( |$)';
   fi
   # strip comments, blank lines, and quotes
   # the last sed is to remove that final quote if there is one, since we don't have the lazy star in POSIX Extended
-  # about the quote character classes: first is the double quote, then I have to close the replacement's single quote, then--
-  # escape to make a literal quote, then reopen the single quote to finish the expression--
-  # so close single quote, put literal single quote, reopen single quote
-  config=$(echo "$config" | grep -Eo '^[^#$]+' | sed -E 's/^["'\'']?([A-z\-]+)["'\'']? +["'\'']?(.*)/\1 \2/g' | sed -E 's/["'\'']?$//g')
+  # to put a literal single quote: close single quote, put literal single quote, reopen single quote
+  config=$(echo "$config" | grep -Eo '^[^#$]+' |
+    sed -E 's/^["'\'']?([A-Za-z\-]+)["'\'']? +["'\'']?(.*)/\1 \2/g' |
+    sed -E 's/["'\'']?$//g')
 else
   printf "ddns-updater: No configuration details provided. Exiting.\n" 1>&2
   exit 1
