@@ -1,7 +1,10 @@
 #!/bin/sh
 
 # make sure ddns-updater isn't already running
-if [ $(ps -lA | grep -c 'ddns\-updater' 2> /dev/null) -gt 1 ]; then
+# q: why -gt 2?
+# a: the first is this process before it exits
+# the second is the grep command
+if [ $(ps -lA | grep -c 'ddns\-updater' 2> /dev/null) -gt 2 ]; then
   printf "ddns-updater already running. Exiting...\n"
   exit 1
 fi
