@@ -1,5 +1,12 @@
 #!/bin/sh
 
+# make sure ddns-updater isn't already running
+if ps -lA | grep 'ddns\-updater'; do
+  printf "ddns-updater already running. Exiting...\n"
+  exit 1
+done
+
+
 # kill all subprocesses before killing self
 killme() {
     for i in $(ps -o pid,ppid | grep $$ | sed -E 's/[0-9]+$//g'); do
