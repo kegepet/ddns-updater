@@ -9,19 +9,6 @@ if [ $(ps -lA | grep -c 'ddns\-updater' 2> /dev/null) -gt 2 ]; then
   exit 1
 fi
 
-
-# kill all subprocesses before killing self
-killme() {
-    for i in $(ps -o pid,ppid | grep $$ | sed -E 's/[0-9]+$//g'); do
-        [ $i -ne $$ ] && kill $i > /dev/null 2>&1
-    done
-    printf "ddns-updater exiting...\n"
-}
-
-TAB=$(printf '\t')
-NEWLINE="
-"
-
 # check for Internet
 if ! ping -c 1 -W 2 -q www.google.com > /dev/null 2>&1; then
   printf "ddns-updater: There appears to be no Internet connection. Exiting...\n" >&2
@@ -37,6 +24,18 @@ if ! command -v dig 1> /dev/null; then
   printf "ddns-updater: 'dig', part of the 'dnsutils' package, must be installed on your system. Exiting...\n" 1>&2
   exit 1
 fi
+
+# kill all subprocesses before killing self
+killme() {
+    for i in $(ps -o pid,ppid | grep $$ | sed -E 's/[0-9]+$//g'); do
+        [ $i -ne $$ ] && kill $i > /dev/null 2>&1
+    done
+    printf "ddns-updater exiting...\n"
+}
+
+TAB=$(printf '\t')
+NEWLINE="
+"
 
 # get config details; normalize
 # config details normalized to:
