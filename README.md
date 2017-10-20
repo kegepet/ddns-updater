@@ -20,7 +20,7 @@ or with short options:
 ```
 /path/to/ddns-updater -h "subdomain.mydomain.com" -u "https://blah.com?update=subdomain.mydomain.com" -s "120" -l "10" -h "xyz.anotherdomain.com" -u "https://hostddns.com?hostname=abc.anotherdomain.com"
 ```
-You can also mix short and long options. It doesn't matter.
+You can also mix short and long options, but not if you are using a configuration file.
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Field&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Description 
 --- |--- 
