@@ -14,11 +14,11 @@ A sample configuration file has been created and can be used as a basis for your
 
 You may also choose to configure **ddns-updater** directly from the command line using either the short options, e.g. `-u`, or long ones, e.g. `--update-url`, of the available configuration fields listed below. As with the configuration file, the `hostname` field must always be at the front of a host block. For example:
 ```
-/path/to/ddns-updater --hostname "abc.mydomain.com" --update-url "https://ddnshost.com?update=abc.mydomain.com" --secs-between "120" --failure-limit "10" --hostname "xyz.anotherdomain.com" --update-url "https://hostddns.com?hostname=abc.anotherdomain.com"
+/path/to/ddns-updater --hostname "abc.mydomain.com" --update-url "https://ddnshost.com?update=abc.mydomain.com" --secs-between "120" --failure-limit "10" --hostname "xyz.anotherdomain.com" --update-url "https://hostddns.com?hostname=xyz.anotherdomain.com"
 ```
 or with short options:
 ```
-/path/to/ddns-updater -h "subdomain.mydomain.com" -u "https://blah.com?update=subdomain.mydomain.com" -s "120" -l "10" -h "xyz.anotherdomain.com" -u "https://hostddns.com?hostname=abc.anotherdomain.com"
+/path/to/ddns-updater -h "abc.mydomain.com" -u "https://blah.com?update=abc.mydomain.com" -s "120" -l "10" -h "xyz.anotherdomain.com" -u "https://hostddns.com?hostname=xyz.anotherdomain.com"
 ```
 You can also mix short and long options, but not if you are using a configuration file.
 
