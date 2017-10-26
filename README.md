@@ -33,7 +33,7 @@ update-**u**rl<br>(required) | The actual URL needed to perform the update. You 
 failure-**l**imit | Specifies how often an update request can fail before the script quits trying. If and when all hosts specified in the configuration reach their respective limits, the script will exit.
 
 ## Installation
-You can just run **ddns-updater** from the commandline by typing `/path/to/ddns-updater -f /path/to/config-file`. This, however, causes **ddns-updater** to run the foreground, occupying your terminal window. Instead, you can send it to the background by adding a `&` to the end of the command, i.e. `/path/to/ddns-updater -f /path/to/config-file &`.
+You can just run **ddns-updater** from the command line by typing `/path/to/ddns-updater -f /path/to/config-file`. This, however, causes **ddns-updater** to run in the foreground, occupying your terminal window. Instead, you can send it to the background by adding a `&` to the end of the command, i.e. `/path/to/ddns-updater -f /path/to/config-file &`.
 
 If you want the script to continue running after you have logged out, you'll probably want to use the `nohup` command along with the `&` to prevent possible hangups caused by `someuser` logging in and out of the system. So:
 ```
