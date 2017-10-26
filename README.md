@@ -32,18 +32,15 @@ update-**u**rl<br>(required) | The actual URL needed to perform the update. You 
 **s**ecs-between | Yes, I'm well aware of how it sounds. But actually, this variable determines how often the script will poll. If left out, the default value is 300 seconds, or 5 minutes. I would strongly suggest you don't set this to be any less than 120 for the reason mentioned in the above section, but also since some DDNS providers may have policies against too-frequent update requests and could possibly prevent any further updates to that domain. Check with your provider to see how often you can poll. The default value should be good in most circumstances, although it could mean that your site will be unreachable for 5+ minutes.
 failure-**l**imit | Specifies how often an update request can fail before the script quits trying. If and when all hosts specified in the configuration reach their respective limits, the script will exit.
 
-
 ## Installation
 You can just run **ddns-updater** from the commandline by typing `/path/to/ddns-updater -f /path/to/config-file`. This, however, causes **ddns-updater** to run the foreground, occupying your terminal window. Instead, you can send it to the background by adding a `&` to the end of the command, i.e. `/path/to/ddns-updater -f /path/to/config-file &`.
 
-Ideally, however, you want **ddns-updater** to run automatically whenever your system starts up. There are a number of ways to do this depending on your specific OS. On Debian Linux-based systems, including Ubuntu, the easiest way to do it is just to add the above command directly to your `/etc/rc.local` file. Better yet, run the command as a specific user (perhaps for security reasons or whatever), such as:
-```
-su someuser -c "/path/to/ddns-updater -f /path/to/config-file &"
-```
-It may also be advisable to use the `nohup` command along with the `&` to prevent possible hangups caused by `someuser` logging in and out of the system. So:
+If you want the script to continue running after you have logged out, you'll probably want to use the `nohup` command along with the `&` to prevent possible hangups caused by `someuser` logging in and out of the system. So:
 ```
 su someuser -c "nohup /path/to/ddns-updater -f /path/to/config-file &"
 ```
-On a Mac, you can just create a plain text file, calling it, say, `start-ddns-updater` and writing `/path/to/ddns-updater -f 'path/to/config-file &'` to this file. Then, go to your Terminal, and make `start-ddns-updater` executable by issuing this command: `chmod +x /path/to/start-ddns-updater`. Finally, go to `System Preferences > Users & Groups > Login Items` and add `start-ddns-updater` to your list of login items. Done.
-
-On other OSes, similar methods exist. Check your documentation.
+Ideally, however, you want **ddns-updater** to run automatically whenever your system starts up. There are a number of ways to do this depending on your specific OS. On Debian Linux-based systems, including Ubuntu, the easiest way to do it is just to add the above command directly to your `/etc/rc.local` file. Better yet, run the command as a specific user (perhaps for security reasons), such as:
+```
+su someuser -c "/path/to/ddns-updater -f /path/to/config-file &"
+```
+On a Mac, you can just create a plain text file, calling it, say, `start-ddns-updater` and writing `/path/to/ddns-updater -f 'path/to/config-file &'` to this file. Then, go to your Terminal, and make `start-ddns-updater` executable by issuing this command: `chmod +x /path/to/start-ddns-updater`. Finally, go to `System Preferences > Users & Groups > Login Items` and add `start-ddns-updater` to your list of login items. Please note, this method is hardly ideal. Macs do have a more proper and involved system of autostarting/stopping services that is beyond the scope of this document, but documentation is readily available elsewhere.
