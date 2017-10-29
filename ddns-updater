@@ -77,8 +77,8 @@ elif [ -s /dev/stdin ] || echo "$*" | grep -Eq '(^| )\-\-config\-file|\-f( |$)';
     exit 1
   fi
   # strip comments, blank lines, and quotes
-  config=$(echo "$config" | grep -Eo "^( |$TAB)*[^#$ $TAB].*" |
-    sed -E "s/^[\"']?([A-Za-z\-]+)[\"']? +[\"']?(.*[^\"'])[\"']?$/\1 \2/g")
+  config=$(echo "$config" | grep -Eo "^[ $TAB]*[^#$ $TAB].*" |
+    sed -E "s/^[\"']?([A-Za-z\-]+)[\"']?[ $TAB]+[\"']?(.*[^\"'])[\"']?$/\1 \2/g")
 else
   printf "ddns-updater: No configuration details provided. Exiting.\n" 1>&2
   exit 1
