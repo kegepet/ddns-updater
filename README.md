@@ -10,8 +10,16 @@
 **ddns-updater** relies on a few external commands on Unix-like systems. Among them, `curl`, `dig`, and `ping`. While it's almost certain that your system has `curl` and `ping` installed, it may not have `dig`. `dig` is a popular DNS probing tool and is installed with the **dnsutils** package. **ddns-updater** will automatically check to see if it's installed, but if it isn't, you can get it any number of ways. For Debian Linux-based systems, just run `apt-get install dnsutils`. For other Linux distros, similar methods exist. Check your documentation. On Macs, `dig` is standard.
 
 ## Configuration
-A sample configuration file has been created and can be used as a basis for your own. The structure is simple: Each key and value is separated by at least one space, key/value pairs are separated by line breaks, as are individual host blocks (the `hostname` and all other configuration fields). The only way the script knows one host and its associated details from another is by the `hostname` field, which is why it must always appear **first** in a host block. The order of the other fields, i.e. `update-url`, `secs-between`, and `failure-limit` are not important. Once again, the `hostname` field must always be first in the block. You may also skip lines for your own clarity, as well as use comments, which are just lines of text with a `#` at the beginning.
+A sample configuration file has been created and can be used as a basis for your own. The structure is simple: Each key and value is separated by at least one space, key/value pairs are separated by line breaks, as are individual host blocks (the `hostname` and all other configuration fields). The only way the script knows one host and its associated details from another is by the `hostname` field, which is why it must always appear **first** in a host block. The order of the other fields, i.e. `update-url`, `secs-between`, and `failure-limit` are not important. Once again, the `hostname` field must always be first in the block. You may also skip lines for your own clarity, as well as use comments, which are just lines of text with a `#` at the beginning. To import your configuration settings from a file, use the `-f` or `--config-file` options.
 
+e.g.
+```
+/path/to/ddns-updater -f /path/to/config-file
+```
+or with file redirection:
+```
+/path/to/ddns-updater < /path/to/config-file
+```
 You may also choose to configure **ddns-updater** directly from the command line using either the short options, e.g. `-u`, or long ones, e.g. `--update-url`, of the available configuration fields listed below. As with the configuration file, the `hostname` field must always appear first in a host block.
 
 e.g.
