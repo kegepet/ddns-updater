@@ -53,6 +53,6 @@ su someuser -c "/path/to/ddns-updater -f /path/to/config-file &"
 ```
 or with logs sent to a particular file, making sure `someuser` has write permissions to that log file.
 ```
-su someuser -c "/path/to/ddns-updater -f /path/to/config-file > /path/to/logfile 2>&1 &"
+su someuser -c "/path/to/ddns-updater -f /path/to/config-file >> /path/to/logfile 2>&1 &"
 ```
 On a Mac, you can just create a plain text file, calling it, say, `start-ddns-updater` and writing `/path/to/ddns-updater -f 'path/to/config-file &'` to this file. Then, go to your Terminal, and make `start-ddns-updater` executable by issuing this command: `chmod +x /path/to/start-ddns-updater`. Finally, go to `System Preferences > Users & Groups > Login Items` and add `start-ddns-updater` to your list of login items. Please note, this method is hardly ideal. Macs do have a more proper and involved system of autostarting/stopping services that is beyond the scope of this document, but documentation is readily available elsewhere.
